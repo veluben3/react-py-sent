@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     )
     cors_origins: str = "http://localhost:5173"
 
-    azure_openai_endpoint: str = ""
+    azure_openai_endpoint: str = "https://ix-hrtest-2402.cognitiveservices.azure.com/"
     azure_openai_api_key: str = ""
     azure_openai_deployment: str = "gpt-4o-mini"
     azure_openai_api_version: str = "2024-08-01-preview"

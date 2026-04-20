@@ -22,3 +22,19 @@ class ContentSubmissionOut(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PostCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=255)
+    content: str = Field(..., min_length=1)
+
+
+class PostOut(BaseModel):
+    id: int
+    title: str
+    original_content: str
+    converted_content: str
+    word_count: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)

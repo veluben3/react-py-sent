@@ -1,86 +1,71 @@
-import { useState, type FormEvent } from 'react';
-import { submitContent } from './api';
-import type { SubmitResponse } from './types';
+import { useCallback, useEffect, useState } from 'react';
+import { listPosts } from './api';
+import type { Post } from './types';
+import { Sidebar } from './components/Sidebar';
+import { Dashboard } from './components/Dashboard';
+import { NewPost } from './components/NewPost';
+import { PostsList } from './components/PostsList';
 
-type Status =
-  | { kind: 'idle' }
-  | { kind: 'loading' }
-  | { kind: 'success'; data: SubmitResponse }
-  | { kind: 'error'; message: string };
+export type ViewKey = 'dashboard' | 'new-post' | 'posts';
 
 export default function App() {
-  const [content, setContent] = useState<string>('');
-  const [status, setStatus] = useState<Status>({ kind: 'idle' });
+  const [view, setView] = useState<ViewKey>('dashboard');
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setStatus({ kind: 'loading' });
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const data = await submitContent({ content });
-      setStatus({ kind: 'success', data });
+      const data = await listPosts();
+      setPosts(data);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
-      setStatus({ kind: 'error', message });
+      const message = err instanceof Error ? err.message : 'Failed to load';
+      setError(message);
+    } finally {
+      setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const handleCreated = (post: Post) => {
+    setPosts((prev) => [post, ...prev]);
   };
 
-  const handleReset = () => {
-    setContent('');
-    setStatus({ kind: 'idle' });
+  const handleDeleted = (id: number) => {
+    setPosts((prev) => prev.filter((p) => p.id !== id));
   };
-
-  const isLoading = status.kind === 'loading';
-  const canSubmit = content.trim().length > 0 && !isLoading;
 
   return (
-    <main className="container">
-      <header>
-        <h1>Submit Content for AI Review</h1>
-        <p className="subtitle">
-          Paste your text below and submit. The backend sends it to Azure OpenAI
-          (via LangChain) and returns a response limited to 250 words.
-        </p>
-      </header>
-
-      <form onSubmit={handleSubmit} className="form">
-        <div className="field">
-          <label htmlFor="content">Content</label>
-          <textarea
-            id="content"
-            name="content"
-            rows={14}
-            placeholder="Enter the content you want analyzed / summarized / rewritten..."
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            disabled={isLoading}
-            required
+    <div className="admin-layout">
+      <Sidebar
+        current={view}
+        onSelect={setView}
+        postCount={posts.length}
+      />
+      <main className="admin-main">
+        {view === 'dashboard' && (
+          <Dashboard
+            posts={posts}
+            loading={loading}
+            onNavigate={setView}
           />
-          <small>{content.length} characters</small>
-        </div>
-
-        <div className="actions">
-          <button type="submit" disabled={!canSubmit}>
-            {isLoading ? 'Submitting…' : 'Submit'}
-          </button>
-          <button type="button" onClick={handleReset} disabled={isLoading}>
-            Reset
-          </button>
-        </div>
-      </form>
-
-      {status.kind === 'success' && (
-        <div className="alert success">
-          <strong>AI reply</strong> (entry #{status.data.id},{' '}
-          {status.data.word_count} words, {status.data.received_chars} chars in):
-          <pre className="ai-reply">{status.data.ai_reply}</pre>
-        </div>
-      )}
-
-      {status.kind === 'error' && (
-        <div className="alert error">
-          <strong>Error:</strong> {status.message}
-        </div>
-      )}
-    </main>
+        )}
+        {view === 'new-post' && <NewPost onCreated={handleCreated} />}
+        {view === 'posts' && (
+          <PostsList
+            posts={posts}
+            loading={loading}
+            error={error}
+            onRefresh={refresh}
+            onDeleted={handleDeleted}
+          />
+        )}
+      </main>
+    </div>
   );
 }
