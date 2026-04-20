@@ -47,6 +47,11 @@ export async function listPosts(): Promise<Post[]> {
   return handle<Post[]>(response);
 }
 
+export async function getPost(id: number): Promise<Post> {
+  const response = await fetch(`${API_URL}/api/posts/${id}`);
+  return handle<Post>(response);
+}
+
 export async function deletePost(id: number): Promise<void> {
   const response = await fetch(`${API_URL}/api/posts/${id}`, {
     method: 'DELETE',

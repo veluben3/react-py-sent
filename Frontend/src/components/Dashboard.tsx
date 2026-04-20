@@ -6,6 +6,7 @@ interface DashboardProps {
   posts: Post[];
   loading: boolean;
   onNavigate: (view: ViewKey) => void;
+  onOpenPost: (id: number) => void;
 }
 
 function formatDate(iso: string): string {
@@ -18,7 +19,12 @@ function formatDate(iso: string): string {
   });
 }
 
-export function Dashboard({ posts, loading, onNavigate }: DashboardProps) {
+export function Dashboard({
+  posts,
+  loading,
+  onNavigate,
+  onOpenPost,
+}: DashboardProps) {
   const totalPosts = posts.length;
   const totalWords = posts.reduce((sum, p) => sum + (p.word_count ?? 0), 0);
   const avgWords = totalPosts > 0 ? Math.round(totalWords / totalPosts) : 0;
@@ -79,17 +85,24 @@ export function Dashboard({ posts, loading, onNavigate }: DashboardProps) {
         ) : (
           <ul className="recent-list">
             {recent.map((p) => (
-              <li key={p.id} className="recent-item">
-                <div className="recent-main">
-                  <div className="recent-title">{p.title}</div>
-                  <div className="recent-meta">
-                    #{p.id} · {formatDate(p.created_at)} · {p.word_count} words
+              <li key={p.id}>
+                <button
+                  type="button"
+                  className="recent-item"
+                  onClick={() => onOpenPost(p.id)}
+                >
+                  <div className="recent-main">
+                    <div className="recent-title">{p.title}</div>
+                    <div className="recent-meta">
+                      #{p.id} · {formatDate(p.created_at)} · {p.word_count}{' '}
+                      words
+                    </div>
                   </div>
-                </div>
-                <div className="recent-preview">
-                  {p.converted_content.slice(0, 140)}
-                  {p.converted_content.length > 140 ? '…' : ''}
-                </div>
+                  <div className="recent-preview">
+                    {p.converted_content.slice(0, 140)}
+                    {p.converted_content.length > 140 ? '…' : ''}
+                  </div>
+                </button>
               </li>
             ))}
           </ul>

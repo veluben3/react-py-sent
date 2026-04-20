@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { Post } from '../types';
 import { deletePost } from '../api';
 import { TopBar } from './TopBar';
@@ -9,6 +9,7 @@ interface PostsListProps {
   error: string | null;
   onRefresh: () => void;
   onDeleted: (id: number) => void;
+  onOpenPost: (id: number) => void;
 }
 
 function formatDate(iso: string): string {
@@ -21,9 +22,9 @@ export function PostsList({
   error,
   onRefresh,
   onDeleted,
+  onOpenPost,
 }: PostsListProps) {
   const [query, setQuery] = useState('');
-  const [expandedId, setExpandedId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const filtered = useMemo(() => {
@@ -37,7 +38,11 @@ export function PostsList({
     );
   }, [posts, query]);
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (
+    e: React.MouseEvent<HTMLButtonElement>,
+    id: number,
+  ) => {
+    e.stopPropagation();
     if (!window.confirm('Delete this post? This cannot be undone.')) return;
     setDeletingId(id);
     try {
@@ -55,7 +60,7 @@ export function PostsList({
     <>
       <TopBar
         title="All Posts"
-        subtitle="Posts stored in PostgreSQL. The converted column shows the AI-transformed version."
+        subtitle="Click a post to view its details. The converted column shows the AI-transformed version."
         actions={
           <button type="button" className="btn ghost" onClick={onRefresh}>
             ⟳ Refresh
@@ -65,7 +70,9 @@ export function PostsList({
 
       <section className="card">
         <div className="card-header">
-          <h2>{filtered.length} post{filtered.length === 1 ? '' : 's'}</h2>
+          <h2>
+            {filtered.length} post{filtered.length === 1 ? '' : 's'}
+          </h2>
           <input
             type="search"
             className="search"
@@ -101,67 +108,42 @@ export function PostsList({
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((p) => {
-                  const expanded = expandedId === p.id;
-                  return (
-                    <Fragment key={p.id}>
-                      <tr className={expanded ? 'row-open' : undefined}>
-                        <td className="mono">{p.id}</td>
-                        <td>
-                          <button
-                            type="button"
-                            className="link"
-                            onClick={() =>
-                              setExpandedId(expanded ? null : p.id)
-                            }
-                          >
-                            {p.title}
-                          </button>
-                        </td>
-                        <td className="preview-cell">
-                          {p.converted_content.slice(0, 120)}
-                          {p.converted_content.length > 120 ? '…' : ''}
-                        </td>
-                        <td>{p.word_count}</td>
-                        <td className="muted">{formatDate(p.created_at)}</td>
-                        <td>
-                          <button
-                            type="button"
-                            className="btn danger small"
-                            disabled={deletingId === p.id}
-                            onClick={() => handleDelete(p.id)}
-                          >
-                            {deletingId === p.id ? '…' : 'Delete'}
-                          </button>
-                        </td>
-                      </tr>
-                      {expanded && (
-                        <tr className="row-detail">
-                          <td colSpan={6}>
-                            <div className="detail-grid">
-                              <div>
-                                <div className="detail-label">
-                                  Original content
-                                </div>
-                                <div className="detail-text">
-                                  {p.original_content}
-                                </div>
-                              </div>
-                              <div>
-                                <div className="detail-label">
-                                  Converted content
-                                </div>
-                                <div className="detail-text converted">
-                                  {p.converted_content}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </Fragment>
-                  );
-                })}
+                {filtered.map((p) => (
+                  <tr
+                    key={p.id}
+                    className="row-clickable"
+                    onClick={() => onOpenPost(p.id)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onOpenPost(p.id);
+                      }
+                    }}
+                  >
+                    <td className="mono">{p.id}</td>
+                    <td>
+                      <span className="row-title">{p.title}</span>
+                    </td>
+                    <td className="preview-cell">
+                      {p.converted_content.slice(0, 120)}
+                      {p.converted_content.length > 120 ? '…' : ''}
+                    </td>
+                    <td>{p.word_count}</td>
+                    <td className="muted">{formatDate(p.created_at)}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="btn danger small"
+                        disabled={deletingId === p.id}
+                        onClick={(e) => handleDelete(e, p.id)}
+                      >
+                        {deletingId === p.id ? '…' : 'Delete'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

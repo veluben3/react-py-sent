@@ -536,6 +536,16 @@ code {
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.recent-item:hover {
+  background: var(--accent-soft);
+  border-color: rgba(79, 70, 229, 0.25);
 }
 
 .recent-main {
@@ -601,17 +611,27 @@ code {
   background: var(--surface-2);
 }
 
-.table tbody tr.row-open {
+.table tbody tr.row-clickable {
+  cursor: pointer;
+}
+
+.table tbody tr.row-clickable:hover {
   background: var(--accent-soft);
 }
 
-.table tbody tr.row-open:hover {
+.table tbody tr.row-clickable:focus {
+  outline: none;
   background: var(--accent-soft);
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 
-.row-detail td {
-  background: var(--surface-2);
-  padding: 1rem 1.1rem 1.25rem;
+.row-title {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.table tbody tr.row-clickable:hover .row-title {
+  color: var(--accent);
 }
 
 .detail-grid {
@@ -650,6 +670,24 @@ code {
 .detail-text.converted {
   background: var(--accent-soft);
   border-color: rgba(79, 70, 229, 0.2);
+}
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+}
+
+.meta-grid > div {
+  padding: 0.6rem 0.8rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+}
+
+.meta-grid .detail-label {
+  margin-bottom: 0.25rem;
 }
 
 .preview-cell {
